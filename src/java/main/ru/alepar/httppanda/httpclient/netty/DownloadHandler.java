@@ -38,12 +38,11 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
             HttpContent content = (HttpContent) msg;
 
             final ByteBuf byteBuf = content.content();
-            final byte[] bytes = new byte[byteBuf.capacity()];
-            byteBuf.getBytes(0, bytes);
-            buffer.write(bytes, pos);
-            pos += bytes.length;
+            buffer.write(byteBuf.nioBuffer(), pos);
 
-            mibPerSecStat.add(bytes.length);
+            mibPerSecStat.add(byteBuf.readableBytes());
+            pos += byteBuf.readableBytes();
+
             System.out.print(String.format("%.4fMiB/s%c", mibPerSecStat.get()/1024.0/1024, (char)13));
 
             if (content instanceof LastHttpContent) {

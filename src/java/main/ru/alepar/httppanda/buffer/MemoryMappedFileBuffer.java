@@ -34,15 +34,16 @@ public class MemoryMappedFileBuffer implements Buffer {
         MappedByteBuffer window = windows.get(windowIdx);
 
         if (window == null) {
-            window = fc.map(FileChannel.MapMode.READ_WRITE,  ((long)windowIdx) * windowSize, windowSize);
+            window = fc.map(FileChannel.MapMode.READ_WRITE, ((long)windowIdx) * windowSize, windowSize);
             windows.put(windowIdx, window);
         }
 
         return window.slice();
     }
 
-    private void slices(byte[] buffer, long startPos, BufFunc f) {
-        final long endPos = startPos + buffer.length - 1;
+    private void slices(ByteBuffer buffer, long startPos, BufFunc f) {
+        final long endPos = startPos + buffer.remaining() - 1;
+        final int originalLimit = buffer.limit();
         final int startWindowIdx = (int)(startPos / windowSize);
         final int endWindowIdx = (int)(endPos / windowSize);
 
@@ -50,17 +51,16 @@ public class MemoryMappedFileBuffer implements Buffer {
             for(int i = 0; i <= endWindowIdx-startWindowIdx; i++) {
                 final ByteBuffer mem = getWindow(i + startWindowIdx);
 
-                final int offset;
-                final int firstWindowOffset = (int) (startPos % windowSize);
                 if (i == 0) {
-                    mem.position(firstWindowOffset);
-                    offset = 0;
-                } else {
-                    offset = i * windowSize - firstWindowOffset;
+                    mem.position((int) (startPos % windowSize));
                 }
 
-                final int length = Math.min(buffer.length - offset, windowSize - mem.position());
-                f.call(mem, buffer, offset, length);
+                final int length = Math.min(buffer.remaining(), mem.remaining());
+                buffer.limit(buffer.position() + length);
+                mem.limit(mem.position() + length);
+
+                f.call(mem, buffer);
+                buffer.limit(originalLimit);
             }
         } catch (Exception e) {
             throw new RuntimeException("failed to write to memory mapped file", e);
@@ -68,17 +68,17 @@ public class MemoryMappedFileBuffer implements Buffer {
     }
 
     @Override
-    public void read(byte[] buffer, long startPos) {
-        slices(buffer, startPos, ByteBuffer::get);
+    public void read(ByteBuffer buffer, long startPos) {
+        slices(buffer, startPos, (s, b) -> b.put(s));
     }
 
     @Override
-    public void write(byte[] buffer, long startPos) {
-        slices(buffer, startPos, ByteBuffer::put);
+    public void write(ByteBuffer buffer, long startPos) {
+        slices(buffer, startPos, (s, b) -> s.put(b));
     }
 
     private interface BufFunc {
-        void call(ByteBuffer m, byte[] b, int o, int l);
+        void call(ByteBuffer storage, ByteBuffer buffer);
     }
 
 }

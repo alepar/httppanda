@@ -1,6 +1,8 @@
 package ru.alepar.httppanda.buffer;
 
+import java.nio.ByteBuffer;
+
 public interface Buffer {
-    void read(byte[] buffer, long start);
-    void write(byte[] buffer, long start);
+    void read(ByteBuffer buffer, long start);
+    void write(ByteBuffer buffer, long start);
 }

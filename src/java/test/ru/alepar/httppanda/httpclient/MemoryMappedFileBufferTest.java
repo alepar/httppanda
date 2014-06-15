@@ -6,6 +6,7 @@ import ru.alepar.httppanda.buffer.Buffer;
 import ru.alepar.httppanda.buffer.MemoryMappedFileBuffer;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -21,10 +22,10 @@ public class MemoryMappedFileBufferTest {
         final Buffer buffer = new MemoryMappedFileBuffer(file, SIZE);
 
         final byte[] expected = createArray(SIZE);
-        buffer.write(expected, 0);
+        buffer.write(ByteBuffer.wrap(expected), 0);
 
         final byte[] actual = new byte[SIZE];
-        buffer.read(actual, 0);
+        buffer.read(ByteBuffer.wrap(actual), 0);
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
@@ -35,10 +36,10 @@ public class MemoryMappedFileBufferTest {
         final Buffer buffer = new MemoryMappedFileBuffer(file, SIZE);
 
         final byte[] expected = createArray(SIZE*3);
-        buffer.write(expected, 0);
+        buffer.write(ByteBuffer.wrap(expected), 0);
 
         final byte[] actual = new byte[SIZE*3];
-        buffer.read(actual, 0);
+        buffer.read(ByteBuffer.wrap(actual), 0);
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
@@ -48,10 +49,10 @@ public class MemoryMappedFileBufferTest {
         final Buffer buffer = new MemoryMappedFileBuffer(file, 1024*1024*32);
 
         final byte[] expected = createArray(1024*1024*128);
-        buffer.write(expected, 0);
+        buffer.write(ByteBuffer.wrap(expected), 0);
 
         final byte[] actual = new byte[1024*1024*128];
-        buffer.read(actual, 0);
+        buffer.read(ByteBuffer.wrap(actual), 0);
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
@@ -62,10 +63,10 @@ public class MemoryMappedFileBufferTest {
         final Buffer buffer = new MemoryMappedFileBuffer(file, SIZE);
 
         final byte[] expected = createArray(SIZE*3);
-        buffer.write(expected, 0);
+        buffer.write(ByteBuffer.wrap(expected), 0);
 
         final byte[] actual = new byte[SIZE * 2];
-        buffer.read(actual, 2);
+        buffer.read(ByteBuffer.wrap(actual), 2);
 
         for (int i = 0; i < actual.length; i++) {
             assertThat(actual[i], equalTo((byte)(i+2)));
@@ -78,10 +79,10 @@ public class MemoryMappedFileBufferTest {
         final Buffer buffer = new MemoryMappedFileBuffer(file, SIZE);
 
         final byte[] write = createArray(SIZE*2);
-        buffer.write(write, 1);
+        buffer.write(ByteBuffer.wrap(write), 1);
 
         final byte[] actual = new byte[SIZE*3];
-        buffer.read(actual, 0);
+        buffer.read(ByteBuffer.wrap(actual), 0);
 
         assertThat(Arrays.equals(actual, new byte[] { 0, 0, 1, 2, 3, 4, 5, 0, 0 }), equalTo(true));
     }
@@ -94,7 +95,7 @@ public class MemoryMappedFileBufferTest {
         final byte[] array = createArray(size);
 
         for(long i=0; i<8*4; i++) {
-            buffer.write(array, i * size);
+            buffer.write(ByteBuffer.wrap(array), i * size);
         }
     }
 
