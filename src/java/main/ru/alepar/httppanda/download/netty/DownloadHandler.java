@@ -1,4 +1,4 @@
-package ru.alepar.httppanda.httpclient.netty;
+package ru.alepar.httppanda.download.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -7,7 +7,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import ru.alepar.httppanda.buffer.Buffer;
+import ru.alepar.httppanda.buffer.BufferChannel;
 import ru.alepar.httppanda.stat.BytePerSecStat;
 import ru.alepar.httppanda.stat.IoStat;
 
@@ -15,13 +15,13 @@ import java.util.Map;
 
 public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 
-    private final Buffer buffer;
+    private final BufferChannel bufferChannel;
     private final IoStat mibPerSecStat = new BytePerSecStat();
 
     private long pos;
 
-    public DownloadHandler(Buffer buffer) {
-        this.buffer = buffer;
+    public DownloadHandler(BufferChannel bufferChannel) {
+        this.bufferChannel = bufferChannel;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
             HttpContent content = (HttpContent) msg;
 
             final ByteBuf byteBuf = content.content();
-            buffer.write(byteBuf.nioBuffer(), pos);
+            bufferChannel.write(byteBuf.nioBuffer(), pos);
 
             mibPerSecStat.add(byteBuf.readableBytes());
             pos += byteBuf.readableBytes();

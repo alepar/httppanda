@@ -1,4 +1,4 @@
-package ru.alepar.httppanda.httpclient;
+package ru.alepar.httppanda.download;
 
 public interface DownloadWorkerFactory {
 

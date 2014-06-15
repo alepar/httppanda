@@ -1,4 +1,4 @@
-package ru.alepar.httppanda.httpclient.netty;
+package ru.alepar.httppanda.download.netty;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -8,9 +8,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import ru.alepar.httppanda.buffer.Buffer;
-import ru.alepar.httppanda.httpclient.DownloadWorker;
-import ru.alepar.httppanda.httpclient.DownloadWorkerFactory;
+import ru.alepar.httppanda.buffer.BufferChannel;
+import ru.alepar.httppanda.download.DownloadWorker;
+import ru.alepar.httppanda.download.DownloadWorkerFactory;
 
 import java.net.URI;
 
@@ -18,18 +18,18 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
 
     private final URI uri;
     private final EventLoopGroup group;
-    private final Buffer buffer;
+    private final BufferChannel bufferChannel;
 
-    public NettyDownloadWorkerFactory(URI uri, EventLoopGroup group, Buffer buffer) {
+    public NettyDownloadWorkerFactory(URI uri, EventLoopGroup group, BufferChannel bufferChannel) {
         this.uri = uri;
         this.group = group;
-        this.buffer = buffer;
+        this.bufferChannel = bufferChannel;
     }
 
     @Override
     public DownloadWorker start(long offset) {
         try {
-            final DownloadHandler handler = new DownloadHandler(buffer);
+            final DownloadHandler handler = new DownloadHandler(bufferChannel);
 
             final Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)

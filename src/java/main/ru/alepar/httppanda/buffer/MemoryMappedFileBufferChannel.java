@@ -9,18 +9,18 @@ import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MemoryMappedFileBuffer implements Buffer {
+public class MemoryMappedFileBufferChannel implements BufferChannel {
 
     private final Map<Integer, MappedByteBuffer> windows = new HashMap<>();
 
     private final int windowSize;
     private final FileChannel fc;
 
-    public MemoryMappedFileBuffer(File file) {
+    public MemoryMappedFileBufferChannel(File file) {
         this(file, Integer.MAX_VALUE);
     }
 
-    public MemoryMappedFileBuffer(File file, int windowSize) {
+    public MemoryMappedFileBufferChannel(File file, int windowSize) {
         this.windowSize = windowSize;
 
         try {

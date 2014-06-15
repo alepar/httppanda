@@ -6,11 +6,11 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class FileChannelBuffer implements Buffer {
+public class FileBufferChannel implements BufferChannel {
 
     private final FileChannel channel;
 
-    public FileChannelBuffer(File file) {
+    public FileBufferChannel(File file) {
         try {
             channel = new RandomAccessFile(file, "rw").getChannel();
         } catch (Exception e) {

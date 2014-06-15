@@ -1,8 +1,8 @@
-package ru.alepar.httppanda.httpclient.netty;
+package ru.alepar.httppanda.download.netty;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import ru.alepar.httppanda.httpclient.DownloadWorker;
+import ru.alepar.httppanda.download.DownloadWorker;
 
 public class NettyDownloadWorker implements DownloadWorker {
 
