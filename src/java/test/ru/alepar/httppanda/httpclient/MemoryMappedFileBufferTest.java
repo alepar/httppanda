@@ -1,7 +1,9 @@
-package ru.alepar.httppanda;
+package ru.alepar.httppanda.httpclient;
 
 import org.junit.After;
 import org.junit.Test;
+import ru.alepar.httppanda.buffer.Buffer;
+import ru.alepar.httppanda.buffer.MemoryMappedFileBuffer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -82,6 +84,18 @@ public class MemoryMappedFileBufferTest {
         buffer.read(actual, 0);
 
         assertThat(Arrays.equals(actual, new byte[] { 0, 0, 1, 2, 3, 4, 5, 0, 0 }), equalTo(true));
+    }
+
+    @Test
+    public void writingReallyBigFileGoesWithoutExceptions() throws Exception {
+        final Buffer buffer = new MemoryMappedFileBuffer(file, 1024*1024*1024);
+
+        final int size = 1024 * 1024 * 128;
+        final byte[] array = createArray(size);
+
+        for(long i=0; i<8*4; i++) {
+            buffer.write(array, i * size);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
