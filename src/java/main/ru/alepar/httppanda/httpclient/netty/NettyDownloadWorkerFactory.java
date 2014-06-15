@@ -48,6 +48,7 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
             final HttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.getRawPath());
             request.headers().set(HttpHeaders.Names.HOST, uri.getHost());
             request.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
+            request.headers().set(HttpHeaders.Names.RANGE, "bytes=" + offset + "-");
 
             ch.writeAndFlush(request);
 
