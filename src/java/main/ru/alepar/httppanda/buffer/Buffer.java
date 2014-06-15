@@ -1,4 +1,4 @@
-package ru.alepar.httppanda;
+package ru.alepar.httppanda.buffer;
 
 public interface Buffer {
     void read(byte[] buffer, long start);

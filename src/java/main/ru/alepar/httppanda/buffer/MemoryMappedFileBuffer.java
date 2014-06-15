@@ -1,19 +1,24 @@
-package ru.alepar.httppanda;
+package ru.alepar.httppanda.buffer;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryMappedFileBuffer implements Buffer {
 
-    private final Map<Integer, ByteBuffer> windows = new HashMap<>();
+    private final Map<Integer, MappedByteBuffer> windows = new HashMap<>();
 
     private final int windowSize;
     private final FileChannel fc;
+
+    public MemoryMappedFileBuffer(File file) {
+        this(file, Integer.MAX_VALUE);
+    }
 
     public MemoryMappedFileBuffer(File file, int windowSize) {
         this.windowSize = windowSize;
@@ -26,15 +31,14 @@ public class MemoryMappedFileBuffer implements Buffer {
     }
 
     private synchronized ByteBuffer getWindow(int windowIdx) throws IOException {
-        ByteBuffer window = windows.get(windowIdx);
+        MappedByteBuffer window = windows.get(windowIdx);
 
         if (window == null) {
-            window = fc.map(FileChannel.MapMode.READ_WRITE, (long) (windowIdx * windowSize), windowSize);
+            window = fc.map(FileChannel.MapMode.READ_WRITE,  ((long)windowIdx) * windowSize, windowSize);
             windows.put(windowIdx, window);
         }
 
-        window.position(0);
-        return window;
+        return window.slice();
     }
 
     private void slices(byte[] buffer, long startPos, BufFunc f) {
@@ -59,7 +63,7 @@ public class MemoryMappedFileBuffer implements Buffer {
                 f.call(mem, buffer, offset, length);
             }
         } catch (Exception e) {
-            throw new RuntimeException("failed to read from memory mapped file", e);
+            throw new RuntimeException("failed to write to memory mapped file", e);
         }
     }
 
