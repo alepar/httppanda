@@ -4,4 +4,5 @@ import io.netty.channel.ChannelFuture;
 
 public interface DownloadWorker {
     ChannelFuture closeFuture();
+    double getBytePerSec();
 }

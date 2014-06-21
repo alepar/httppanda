@@ -7,7 +7,12 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
 import ru.alepar.httppanda.buffer.BufferChannel;
 import ru.alepar.httppanda.download.DownloadWorker;
 import ru.alepar.httppanda.download.DownloadWorkerFactory;
@@ -29,7 +34,7 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
     @Override
     public DownloadWorker start(long offset) {
         try {
-            final DownloadHandler handler = new DownloadHandler(bufferChannel);
+            final DownloadHandler handler = new DownloadHandler(bufferChannel, offset);
 
             final Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)

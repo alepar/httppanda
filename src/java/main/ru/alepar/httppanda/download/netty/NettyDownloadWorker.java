@@ -18,4 +18,9 @@ public class NettyDownloadWorker implements DownloadWorker {
     public ChannelFuture closeFuture() {
         return ch.closeFuture();
     }
+
+    @Override
+    public double getBytePerSec() {
+        return handler.getBytePerSec();
+    }
 }

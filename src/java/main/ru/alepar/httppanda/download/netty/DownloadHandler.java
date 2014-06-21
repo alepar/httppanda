@@ -16,12 +16,15 @@ import java.util.Map;
 public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private final BufferChannel bufferChannel;
-    private final IoStat mibPerSecStat = new BytePerSecStat();
+    private final IoStat bytePerSecStat = new BytePerSecStat();
+
+    private volatile double bytePerSec;
 
     private long pos;
 
-    public DownloadHandler(BufferChannel bufferChannel) {
+    public DownloadHandler(BufferChannel bufferChannel, long offset) {
         this.bufferChannel = bufferChannel;
+        this.pos = offset;
     }
 
     @Override
@@ -40,15 +43,19 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
             final ByteBuf byteBuf = content.content();
             bufferChannel.write(byteBuf.nioBuffer(), pos);
 
-            mibPerSecStat.add(byteBuf.readableBytes());
-            pos += byteBuf.readableBytes();
-
-            System.out.print(String.format("%.4fMiB/s%c", mibPerSecStat.get()/1024.0/1024, (char)13));
+            final int length = byteBuf.readableBytes();
+            pos += length;
+            bytePerSecStat.add(length);
+            bytePerSec = bytePerSecStat.get();
 
             if (content instanceof LastHttpContent) {
                 ctx.close();
             }
         }
+    }
+
+    public double getBytePerSec() {
+        return bytePerSec;
     }
 
     @Override
