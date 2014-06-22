@@ -32,9 +32,14 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
     }
 
     @Override
-    public DownloadWorker start(long offset) {
+    public DownloadWorker start(long start) {
+        return start(start, -1);
+    }
+
+    @Override
+    public DownloadWorker start(long start, long end) {
         try {
-            final DownloadHandler handler = new DownloadHandler(bufferChannel, offset);
+            final DownloadHandler handler = new DownloadHandler(bufferChannel, start);
 
             final Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)
@@ -53,7 +58,7 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
             final HttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.getRawPath());
             request.headers().set(HttpHeaders.Names.HOST, uri.getHost());
             request.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-            request.headers().set(HttpHeaders.Names.RANGE, "bytes=" + offset + "-");
+            request.headers().set(HttpHeaders.Names.RANGE, "bytes=" + start + "-" + (end < 0 ? "" : end));
 
             ch.writeAndFlush(request);
 
