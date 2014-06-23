@@ -16,7 +16,7 @@ public class FileDownloader {
         this.group = group;
     }
 
-    public void downloadFile(URI uri, int nWorkers, BufferChannel bufferChannel) {
+    public void downloadFile(URI uri, BufferChannel bufferChannel, int nWorkers) {
         try {
             final DownloadWorkerFactory downloadWorkerFactory = new NettyDownloadWorkerFactory(uri, group, bufferChannel);
 

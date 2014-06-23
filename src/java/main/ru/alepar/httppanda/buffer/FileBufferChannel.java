@@ -6,13 +6,15 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class FileBufferChannel implements BufferChannel {
+public class FileBufferChannel implements SizedBufferChannel {
 
     private final FileChannel channel;
+    private final RandomAccessFile raw;
 
     public FileBufferChannel(File file) {
         try {
-            channel = new RandomAccessFile(file, "rw").getChannel();
+            raw = new RandomAccessFile(file, "rw");
+            channel = raw.getChannel();
         } catch (Exception e) {
             throw new RuntimeException("failed to open file " + file.getAbsolutePath(), e);
         }
@@ -33,6 +35,15 @@ public class FileBufferChannel implements BufferChannel {
             channel.write(buffer, start);
         } catch (IOException e) {
             throw new RuntimeException("failed to write to file", e);
+        }
+    }
+
+    @Override
+    public long size() {
+        try {
+            return raw.length();
+        } catch (IOException e) {
+            throw new RuntimeException("failed to get file size", e);
         }
     }
 }

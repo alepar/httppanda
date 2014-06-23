@@ -12,10 +12,11 @@ public class HttpClient {
     public static void main(String[] args) throws Exception {
         final EventLoopGroup group = new NioEventLoopGroup(1);
         try {
-            final File file = new File("video_far2.mkv");
             new FileDownloader(group).downloadFile(
-                    new URI("http://80.251.126.234:45707/Content/6262015F2593C8B49B8FD7760EAAEA02AC959925-0.avi"),
-                    20, new FileBufferChannel(file)
+//                    new URI("http://80.251.126.234:45707/Content/6262015F2593C8B49B8FD7760EAAEA02AC959925-0.avi"),
+                    new URI("http://127.0.0.1:31337"),
+                    new FileBufferChannel(new File("video_down.mkv")),
+                    1
             );
         } finally {
             group.shutdownGracefully();
