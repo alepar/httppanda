@@ -3,7 +3,7 @@ package ru.alepar.httppanda.upload;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
-import ru.alepar.httppanda.buffer.FileBufferChannel;
+import ru.alepar.httppanda.buffer.FileByteChannelFactory;
 import ru.alepar.httppanda.upload.netty.NettyBufferChannelServer;
 
 import java.io.File;
@@ -23,7 +23,7 @@ public class HttpServer {
 
         final BufferChannelServer server = new NettyBufferChannelServer(
                 new NioEventLoopGroup(8),
-                new FileBufferChannel(new File("video.mkv")),
+                new FileByteChannelFactory(new File("video.mkv")),
                 31337,
                 headers
         );

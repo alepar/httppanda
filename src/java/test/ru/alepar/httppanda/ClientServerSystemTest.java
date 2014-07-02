@@ -4,8 +4,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.Test;
-import ru.alepar.httppanda.buffer.ArrayBackedBufferChannel;
-import ru.alepar.httppanda.buffer.SizedBufferChannel;
+import ru.alepar.httppanda.buffer.ArrayBackedByteChannelFactory;
+import ru.alepar.httppanda.buffer.SizedByteChannelFactory;
 import ru.alepar.httppanda.download.DownloadWorker;
 import ru.alepar.httppanda.download.netty.NettyDownloadWorkerFactory;
 import ru.alepar.httppanda.upload.BufferChannelServer;
@@ -28,8 +28,8 @@ public class ClientServerSystemTest {
         final byte[] expectedBytes = createRandomByteArray(DATA_SIZE);
         final byte[] actualBytes = new byte[DATA_SIZE];
 
-        final SizedBufferChannel actualBuffer = new ArrayBackedBufferChannel(actualBytes);
-        final SizedBufferChannel expectedBuffer = new ArrayBackedBufferChannel(expectedBytes);
+        final SizedByteChannelFactory actualBuffer = new ArrayBackedByteChannelFactory(actualBytes);
+        final SizedByteChannelFactory expectedBuffer = new ArrayBackedByteChannelFactory(expectedBytes);
 
         final EventLoopGroup group = new NioEventLoopGroup(1);
         final BufferChannelServer server = new NettyBufferChannelServer(group, actualBuffer, PORT, new DefaultHttpHeaders());
@@ -43,6 +43,39 @@ public class ClientServerSystemTest {
             client.closeFuture().sync();
 
             assertTrue(Arrays.equals(actualBytes, expectedBytes));
+        } finally {
+            server.close();
+            group.shutdownGracefully();
+        }
+    }
+
+    @Test
+    public void clientDownloadsRangeCorrectly() throws Exception {
+        final int rangeLength = DATA_SIZE / 2;
+        final int rangeStart = DATA_SIZE / 3;
+        final int rangeEnd = rangeStart + rangeLength - 1;
+
+        final byte[] expectedBytes = createRandomByteArray(DATA_SIZE);
+        final byte[] actualBytes = new byte[DATA_SIZE];
+
+        final SizedByteChannelFactory sendChannel = new ArrayBackedByteChannelFactory(actualBytes);
+        final SizedByteChannelFactory receiveChannel = new ArrayBackedByteChannelFactory(expectedBytes);
+
+        final EventLoopGroup group = new NioEventLoopGroup(1);
+        final BufferChannelServer server = new NettyBufferChannelServer(group, sendChannel, PORT, new DefaultHttpHeaders());
+        try {
+            final DownloadWorker client = new NettyDownloadWorkerFactory(
+                    new URI("http://127.0.0.1:" + PORT + "/"),
+                    group,
+                    receiveChannel
+            ).start(rangeStart, rangeEnd);
+
+            client.closeFuture().sync();
+
+            assertTrue(Arrays.equals(
+                    Arrays.copyOfRange(actualBytes, rangeStart, rangeEnd+1),
+                    Arrays.copyOfRange(expectedBytes, rangeStart, rangeEnd+1)
+            ));
         } finally {
             server.close();
             group.shutdownGracefully();

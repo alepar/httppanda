@@ -2,7 +2,7 @@ package ru.alepar.httppanda.download;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.HttpHeaders;
-import ru.alepar.httppanda.buffer.BufferChannel;
+import ru.alepar.httppanda.buffer.ByteChannelFactory;
 import ru.alepar.httppanda.download.netty.NettyDownloadWorkerFactory;
 
 import java.net.URI;
@@ -16,9 +16,9 @@ public class FileDownloader {
         this.group = group;
     }
 
-    public void downloadFile(URI uri, BufferChannel bufferChannel, int nWorkers) {
+    public void downloadFile(URI uri, ByteChannelFactory byteChannelFactory, int nWorkers) {
         try {
-            final DownloadWorkerFactory downloadWorkerFactory = new NettyDownloadWorkerFactory(uri, group, bufferChannel);
+            final DownloadWorkerFactory downloadWorkerFactory = new NettyDownloadWorkerFactory(uri, group, byteChannelFactory);
 
             final long contentLength = getContentLength(downloadWorkerFactory);
             final long slice = contentLength / nWorkers;

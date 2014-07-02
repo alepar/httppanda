@@ -21,11 +21,12 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.stream.ChunkedNioStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.alepar.httppanda.buffer.SizedBufferChannel;
+import ru.alepar.httppanda.buffer.SizedByteChannelFactory;
 import ru.alepar.httppanda.upload.BufferChannelServer;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -38,11 +39,11 @@ public class NettyBufferChannelServer implements BufferChannelServer {
     private static final Logger log = LoggerFactory.getLogger(NettyBufferChannelServer.class);
 
     private final Channel serverChannel;
-    private final SizedBufferChannel bufferChannel;
+    private final SizedByteChannelFactory channelFactory;
     private final HttpHeaders headers;
 
-    public NettyBufferChannelServer(EventLoopGroup group, SizedBufferChannel bufferChannel, int port, HttpHeaders headers) {
-        this.bufferChannel = bufferChannel;
+    public NettyBufferChannelServer(EventLoopGroup group, SizedByteChannelFactory channelFactory, int port, HttpHeaders headers) {
+        this.channelFactory = channelFactory;
         this.headers = headers;
         try {
             final ServerBootstrap b = new ServerBootstrap();
@@ -99,7 +100,7 @@ public class NettyBufferChannelServer implements BufferChannelServer {
                 return;
             }
 
-            final long totalLength = bufferChannel.size();
+            final long totalLength = channelFactory.size();
 
             start = range.start;
             end = range.end == null ? totalLength-1 : range.end;
@@ -112,7 +113,8 @@ public class NettyBufferChannelServer implements BufferChannelServer {
 
             log.info("started channel: {}, range {}-{}", ctx.channel(), start, end);
             ctx.writeAndFlush(response);
-            ctx.writeAndFlush(new HttpChunkedInput(new BufferChannelChunkedInput(bufferChannel, start, end))).addListener(ChannelFutureListener.CLOSE);
+
+            ctx.writeAndFlush(new HttpChunkedInput(new ChunkedNioStream(channelFactory.readChannel(start, end)))).addListener(ChannelFutureListener.CLOSE);
         }
 
         @Override

@@ -10,10 +10,10 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.alepar.httppanda.buffer.BufferChannel;
 import ru.alepar.httppanda.stat.BytePerSecStat;
 import ru.alepar.httppanda.stat.IoStat;
 
+import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -21,17 +21,14 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadHandler.class);
 
-    private final BufferChannel bufferChannel;
+    private final WritableByteChannel destinationChannel;
     private final IoStat bytePerSecStat = new BytePerSecStat();
     private final CompletableFuture<HttpHeaders> headersFuture = new CompletableFuture<>();
 
     private volatile double bytePerSec;
 
-    private long pos;
-
-    public DownloadHandler(BufferChannel bufferChannel, long offset) {
-        this.bufferChannel = bufferChannel;
-        this.pos = offset;
+    public DownloadHandler(WritableByteChannel destinationChannel) {
+        this.destinationChannel = destinationChannel;
     }
 
     @Override
@@ -43,10 +40,9 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
             HttpContent content = (HttpContent) msg;
 
             final ByteBuf byteBuf = content.content();
-            bufferChannel.write(byteBuf.nioBuffer(), pos);
+            destinationChannel.write(byteBuf.nioBuffer());
 
             final int length = byteBuf.readableBytes();
-            pos += length;
             bytePerSecStat.add(length);
             bytePerSec = bytePerSecStat.get();
 

@@ -13,7 +13,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
-import ru.alepar.httppanda.buffer.BufferChannel;
+import ru.alepar.httppanda.buffer.ByteChannelFactory;
 import ru.alepar.httppanda.download.DownloadWorker;
 import ru.alepar.httppanda.download.DownloadWorkerFactory;
 
@@ -23,12 +23,12 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
 
     private final URI uri;
     private final EventLoopGroup group;
-    private final BufferChannel bufferChannel;
+    private final ByteChannelFactory byteChannelFactory;
 
-    public NettyDownloadWorkerFactory(URI uri, EventLoopGroup group, BufferChannel bufferChannel) {
+    public NettyDownloadWorkerFactory(URI uri, EventLoopGroup group, ByteChannelFactory byteChannelFactory) {
         this.uri = uri;
         this.group = group;
-        this.bufferChannel = bufferChannel;
+        this.byteChannelFactory = byteChannelFactory;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
     @Override
     public DownloadWorker start(long start, long end) {
         try {
-            final DownloadHandler handler = new DownloadHandler(bufferChannel, start);
+            final DownloadHandler handler = new DownloadHandler(byteChannelFactory.writeChannel(start));
 
             final Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)

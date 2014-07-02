@@ -2,30 +2,31 @@ package ru.alepar.httppanda.download;
 
 import org.junit.After;
 import org.junit.Test;
-import ru.alepar.httppanda.buffer.BufferChannel;
-import ru.alepar.httppanda.buffer.MemoryMappedFileBufferChannel;
+import ru.alepar.httppanda.buffer.ByteChannelFactory;
+import ru.alepar.httppanda.buffer.MemoryMappedFileByteChannelFactory;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
-public class MemoryMappedFileBufferChannelTest {
+public class MemoryMappedFileByteChannelFactoryTest {
 
     private final File file = createTempFile();
 
     @Test
     public void ifWriteSmallArrayYouCanReadItBack() throws Exception {
         final int SIZE = 102400;
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, SIZE);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, SIZE);
 
         final byte[] expected = createArray(SIZE);
-        bufferChannel.write(ByteBuffer.wrap(expected), 0);
+        factory.writeChannel(0).write(ByteBuffer.wrap(expected));
 
         final byte[] actual = new byte[SIZE];
-        bufferChannel.read(ByteBuffer.wrap(actual), 0);
+        factory.readChannel(0).read(ByteBuffer.wrap(actual));
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
@@ -33,26 +34,26 @@ public class MemoryMappedFileBufferChannelTest {
     @Test
     public void ifWriteAcrossBorderYouCanReadItBack() throws Exception {
         final int SIZE = 2;
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, SIZE);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, SIZE);
 
         final byte[] expected = createArray(SIZE*3);
-        bufferChannel.write(ByteBuffer.wrap(expected), 0);
+        factory.writeChannel(0).write(ByteBuffer.wrap(expected));
 
         final byte[] actual = new byte[SIZE*3];
-        bufferChannel.read(ByteBuffer.wrap(actual), 0);
+        factory.readChannel(0).read(ByteBuffer.wrap(actual));
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
 
     @Test
     public void writingAndReadingBackWithBigArrayWorks() throws Exception {
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, 1024*1024*32);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, 1024*1024*32);
 
         final byte[] expected = createArray(1024*1024*128);
-        bufferChannel.write(ByteBuffer.wrap(expected), 0);
+        factory.writeChannel(0).write(ByteBuffer.wrap(expected));
 
         final byte[] actual = new byte[1024*1024*128];
-        bufferChannel.read(ByteBuffer.wrap(actual), 0);
+        factory.readChannel(0).read(ByteBuffer.wrap(actual));
 
         assertThat(Arrays.equals(actual, expected), equalTo(true));
     }
@@ -60,13 +61,13 @@ public class MemoryMappedFileBufferChannelTest {
     @Test
     public void readWithOffsetWorksProperly() throws Exception {
         final int SIZE = 3;
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, SIZE);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, SIZE);
 
         final byte[] expected = createArray(SIZE*3);
-        bufferChannel.write(ByteBuffer.wrap(expected), 0);
+        factory.writeChannel(0).write(ByteBuffer.wrap(expected));
 
         final byte[] actual = new byte[SIZE * 2];
-        bufferChannel.read(ByteBuffer.wrap(actual), 2);
+        factory.readChannel(2).read(ByteBuffer.wrap(actual));
 
         for (int i = 0; i < actual.length; i++) {
             assertThat(actual[i], equalTo((byte)(i+2)));
@@ -76,26 +77,27 @@ public class MemoryMappedFileBufferChannelTest {
     @Test
     public void writeWithOffsetWorksProperly() throws Exception {
         final int SIZE = 3;
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, SIZE);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, SIZE);
 
         final byte[] write = createArray(SIZE*2);
-        bufferChannel.write(ByteBuffer.wrap(write), 1);
+        factory.writeChannel(1).write(ByteBuffer.wrap(write));
 
         final byte[] actual = new byte[SIZE*3];
-        bufferChannel.read(ByteBuffer.wrap(actual), 0);
+        factory.readChannel(0).read(ByteBuffer.wrap(actual));
 
         assertThat(Arrays.equals(actual, new byte[] { 0, 0, 1, 2, 3, 4, 5, 0, 0 }), equalTo(true));
     }
 
     @Test
     public void writingReallyBigFileGoesWithoutExceptions() throws Exception {
-        final BufferChannel bufferChannel = new MemoryMappedFileBufferChannel(file, 1024*1024*1024);
+        final ByteChannelFactory factory = new MemoryMappedFileByteChannelFactory(file, 1024*1024*1024);
 
         final int size = 1024 * 1024 * 128;
         final byte[] array = createArray(size);
 
+        final WritableByteChannel channel = factory.writeChannel(0);
         for(long i=0; i<8*4; i++) {
-            bufferChannel.write(ByteBuffer.wrap(array), i * size);
+            channel.write(ByteBuffer.wrap(array));
         }
     }
 
