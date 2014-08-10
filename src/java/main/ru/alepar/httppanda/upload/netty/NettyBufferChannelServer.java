@@ -7,8 +7,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import ru.alepar.httppanda.buffer.SizedByteChannelFactory;
 import ru.alepar.httppanda.upload.BufferChannelServer;
 
+import java.io.IOException;
+
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -42,7 +44,7 @@ public class NettyBufferChannelServer implements BufferChannelServer {
     private final SizedByteChannelFactory channelFactory;
     private final HttpHeaders headers;
 
-    public NettyBufferChannelServer(EventLoopGroup group, SizedByteChannelFactory channelFactory, int port, HttpHeaders headers) {
+    public NettyBufferChannelServer(NioEventLoopGroup group, SizedByteChannelFactory channelFactory, int port, HttpHeaders headers) {
         this.channelFactory = channelFactory;
         this.headers = headers;
         try {
@@ -54,14 +56,15 @@ public class NettyBufferChannelServer implements BufferChannelServer {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             final ChannelPipeline pipeline = ch.pipeline();
                             pipeline.addLast(new HttpServerCodec());
-                            pipeline.addLast(new HttpObjectAggregator(65536));
+                            pipeline.addLast(new HttpObjectAggregator(102400));
                             pipeline.addLast(new ChunkedWriteHandler());
                             pipeline.addLast(new Handler());
                         }
                     });
 
             serverChannel = b.bind(port).sync().channel();
-        } catch (InterruptedException e) {
+            log.debug("listening at {}", serverChannel.localAddress());
+        } catch (Exception e) {
             throw new RuntimeException("failed to start server", e);
         }
     }
@@ -111,10 +114,16 @@ public class NettyBufferChannelServer implements BufferChannelServer {
             response.headers().set("Content-Range", String.format("bytes %d-%d/%d", start, end, totalLength));
             response.headers().set("Content-Length", contentLength);
 
-            log.info("started channel: {}, range {}-{}", ctx.channel(), start, end);
-            ctx.writeAndFlush(response);
+            log.debug("started channel: {}, range {}-{}", ctx.channel(), start, end);
+            ctx.write(response);
 
-            ctx.writeAndFlush(new HttpChunkedInput(new ChunkedNioStream(channelFactory.readChannel(start, end)))).addListener(ChannelFutureListener.CLOSE);
+            ctx.writeAndFlush(new HttpChunkedInput(new ChunkedNioStream(channelFactory.readChannel(start, end), 102400)))
+                    .addListener(f -> {
+                        log.debug("transfer complete {}", ctx.channel());
+                        if (ctx.channel().isActive()) {
+                            ctx.channel().close();
+                        }
+                    });
         }
 
         @Override
@@ -122,12 +131,13 @@ public class NettyBufferChannelServer implements BufferChannelServer {
             if (ctx.channel().isActive()) {
                 ctx.channel().close();
             }
+            if (cause instanceof IOException) {
+                log.debug("io exception in channel {}", ctx.channel());
+            } else {
+                log.warn("exception in channel " + ctx.channel(), cause);
+            }
         }
 
-        @Override
-        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-            log.info("closed channel: {}", ctx.channel());
-        }
     }
 
     private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
@@ -135,9 +145,8 @@ public class NettyBufferChannelServer implements BufferChannelServer {
                 HTTP_1_1, status, Unpooled.copiedBuffer("Failure: " + status + "\r\n", CharsetUtil.UTF_8)
         );
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
-
-        // Close the connection as soon as the error message is sent.
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        log.info("sent error {} to channel {}", status, ctx.channel());
     }
 
 }

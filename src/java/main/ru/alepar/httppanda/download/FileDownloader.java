@@ -1,6 +1,6 @@
 package ru.alepar.httppanda.download;
 
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpHeaders;
 import ru.alepar.httppanda.buffer.ByteChannelFactory;
 import ru.alepar.httppanda.download.netty.NettyDownloadWorkerFactory;
@@ -10,9 +10,9 @@ import java.util.concurrent.ExecutionException;
 
 public class FileDownloader {
 
-    private final EventLoopGroup group;
+    private final NioEventLoopGroup group;
 
-    public FileDownloader(EventLoopGroup group) {
+    public FileDownloader(NioEventLoopGroup group) {
         this.group = group;
     }
 

@@ -12,8 +12,10 @@ import java.nio.channels.WritableByteChannel;
 public class FileByteChannelFactory implements SizedByteChannelFactory {
 
     private final RandomAccessFile raw;
+    private final File file;
 
     public FileByteChannelFactory(File file) {
+        this.file = file;
         try {
             raw = new RandomAccessFile(file, "rw");
         } catch (Exception e) {
@@ -23,7 +25,7 @@ public class FileByteChannelFactory implements SizedByteChannelFactory {
 
     private ByteChannel openChannel(long start) {
         try {
-            final FileChannel channel = raw.getChannel();
+            final FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
             channel.position(start);
             return channel;
         } catch (IOException e) {
@@ -70,31 +72,49 @@ public class FileByteChannelFactory implements SizedByteChannelFactory {
             this.remaining = length;
         }
 
-        private int transfer(ByteBuffer buf, Lambda transfer) {
-            final int limit = buf.limit();
+        @Override
+        public int read(ByteBuffer dst) throws IOException {
+            if (remaining == 0) {
+                return -1;
+            }
+            if (dst.remaining() == 0) {
+                return 0;
+            }
+
+            final int limit = dst.limit();
             try {
-                if (buf.remaining() > remaining) {
-                    buf.limit((int) remaining); // safe to downcast here
+                if (dst.remaining() > remaining) {
+                    dst.limit((int) remaining); // safe to downcast here
                 }
-                final int read = transfer.transfer(byteChannel, buf);
+                final int read = byteChannel.read(dst);
                 remaining -= read;
                 return read;
             } catch(Exception e) {
-                throw new RuntimeException("failed to transfer bytes through FileChannel", e);
+                throw new RuntimeException("failed to read bytes from fileChannel", e);
             } finally {
-                buf.limit(limit);
+                dst.limit(limit);
             }
-        }
-
-
-        @Override
-        public int read(ByteBuffer dst) throws IOException {
-            return transfer(dst, (c, b) -> c.read(b));
         }
 
         @Override
         public int write(ByteBuffer src) throws IOException {
-            return transfer(src, (c, b) -> c.write(b));
+            if (src.remaining() == 0) {
+                return 0;
+            }
+
+            final int limit = src.limit();
+            try {
+                if (src.remaining() > remaining) {
+                    src.limit((int) remaining); // safe to downcast here
+                }
+                final int read = byteChannel.write(src);
+                remaining -= read;
+                return read;
+            } catch(Exception e) {
+                throw new RuntimeException("failed to write bytes to file channel", e);
+            } finally {
+                src.limit(limit);
+            }
         }
 
         @Override
@@ -108,7 +128,4 @@ public class FileByteChannelFactory implements SizedByteChannelFactory {
         }
     }
 
-    private interface Lambda {
-        int transfer(ByteChannel byteChannel, ByteBuffer buffer) throws IOException;
-    }
 }

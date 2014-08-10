@@ -1,6 +1,5 @@
 package ru.alepar.httppanda;
 
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.Test;
@@ -21,7 +20,7 @@ import static org.junit.Assert.*;
 public class ClientServerSystemTest {
 
     public static final int DATA_SIZE = 16 * 1024*1024;
-    public static final int PORT = 31337;
+    public static final int PORT = 31338;
 
     @Test
     public void clientDownloadsExactlyTheSameBytesThatServerSends() throws Exception {
@@ -31,7 +30,7 @@ public class ClientServerSystemTest {
         final SizedByteChannelFactory actualBuffer = new ArrayBackedByteChannelFactory(actualBytes);
         final SizedByteChannelFactory expectedBuffer = new ArrayBackedByteChannelFactory(expectedBytes);
 
-        final EventLoopGroup group = new NioEventLoopGroup(1);
+        final NioEventLoopGroup group = new NioEventLoopGroup(1);
         final BufferChannelServer server = new NettyBufferChannelServer(group, actualBuffer, PORT, new DefaultHttpHeaders());
         try {
             final DownloadWorker client = new NettyDownloadWorkerFactory(
@@ -61,7 +60,7 @@ public class ClientServerSystemTest {
         final SizedByteChannelFactory sendChannel = new ArrayBackedByteChannelFactory(actualBytes);
         final SizedByteChannelFactory receiveChannel = new ArrayBackedByteChannelFactory(expectedBytes);
 
-        final EventLoopGroup group = new NioEventLoopGroup(1);
+        final NioEventLoopGroup group = new NioEventLoopGroup(1);
         final BufferChannelServer server = new NettyBufferChannelServer(group, sendChannel, PORT, new DefaultHttpHeaders());
         try {
             final DownloadWorker client = new NettyDownloadWorkerFactory(

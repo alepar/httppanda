@@ -4,7 +4,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -22,10 +22,10 @@ import java.net.URI;
 public class NettyDownloadWorkerFactory implements DownloadWorkerFactory {
 
     private final URI uri;
-    private final EventLoopGroup group;
+    private final NioEventLoopGroup group;
     private final ByteChannelFactory byteChannelFactory;
 
-    public NettyDownloadWorkerFactory(URI uri, EventLoopGroup group, ByteChannelFactory byteChannelFactory) {
+    public NettyDownloadWorkerFactory(URI uri, NioEventLoopGroup group, ByteChannelFactory byteChannelFactory) {
         this.uri = uri;
         this.group = group;
         this.byteChannelFactory = byteChannelFactory;
